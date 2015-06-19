@@ -1,0 +1,149 @@
+---
+title: "Practical Machine Learning - Prediction Assignment Writeup"
+author: "Jag Padala"
+date: "Jun 18, 2015"
+output: html_document
+---
+
+In this project we will utilize several machine learning techniques to predict the behavior of users of fitness tracker equipment. 
+
+## Exploratory Analysis
+Let us do some exploratory analysis to get a basic understanding of the data set
+
+```{r,echo=TRUE}
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(caret))
+setwd("/Users/apadala/Coursera/pml")
+traindata <- read.csv("pml-training.csv")
+testdata <- read.csv("pml-testing.csv")
+
+set.seed(1234)
+
+inTrainPml <- createDataPartition(y=traindata$classe,p=0.6,list=FALSE)
+trainingPml <- traindata[inTrainPml,]
+testingPml <- traindata[-inTrainPml,]
+
+summary(trainingPml)
+
+```
+
+
+We loaded the data and created a training and test dataset. From the summary we can see that there are 159 predictors in the data for predicting the value of the classe. We can see that classe is a categorical variable with 5 possible results.
+
+We can also see that we have measured the movements for 6 users over a period of time. The timestamp for the measurements and the window of the measurements are recorded. Since the users were instructed to deliberately perform some good and some bad repitions we need to make sure there is no target leakage by including measurements such as window and timestamp that would ovefit our model and lead to incorrect predictions.
+
+We then need to start looking at various other measurements that were taken.
+
+### DATA CLEAN UP
+
+The first observation that pops up on closer inspection of the summary is the number of columns that seem to have a number of NA values. This means that the sensors for measuring these variables are not accurate/reliable. For example kurtosis_roll_belt has a total of 11518 measurements that were empty out of the set of 11776 measurements. So this cannot be used for an meaningful prediction.  kurtosis_picth_belt kurtosis_yaw_belt skewness_roll_belt and  skewness_yaw_belt. We also notice another pattern in variables like max_roll_belt  max_yaw_belt   min_roll_belt min_yaw_belt amplitude_yaw_belt  amplitude_pitch_belt where a number of measurements are NA. Infact these predictors just have NA instead of empty values in 11518 cases. All of these predictors need to be removed so we can get some accurate predictions.
+
+```{r,echo=TRUE}
+
+trainingPmlNonNACols <- trainingPml[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+testingPmlNonNACols <- testingPml[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+
+```
+
+Now that we have cleaned up the data we can start fitting various models and see how the models perform 
+
+### Model Training 1
+
+Trees : We will first fit a tree model using the rpart package in caret. We will analyze the accuracy of the prediction for the model
+
+```{r,echo=TRUE}
+ modfitRpart <- train(classe ~.,method="rpart",data=trainingPmlNonNACols)
+ modfitRpart$finalModel
+ 
+ 
+  library(rattle)
+  fancyRpartPlot(modfitRpart$finalModel)
+  
+  modfitRpart
+```
+
+As we can see the accuracy is pretty poor. However the model does give us some insight into some of the significant variables such as roll_belt, pitch_forearm, magnet_dumbbell_y and roll_forearm that seem to have a higher relevance to predict the outcome for classe.
+
+Since the accuracy of predictions is only 52% the our of sample error rate would be unacceptable.
+
+### Model Training 2
+
+The next model we will try out is the random forest. This may be a better choice for this kind of data since random forest models are good for data with a large number of variables. It estimates the variables that are important so we can get a fairly accurate idea of the variables used for the end result
+
+
+```{r,echo=TRUE}
+
+modfitRforest <- train(classe ~.,method="rf",data=trainingPmlNonNACols)
+ 
+print(modfitRforest)
+print(modfitRforest$finalModel)
+ 
+```
+
+### Description of the sample error and estimation of the error with cross validation
+
+As we can see the accuracy of the model fit is pretty high at 98.7% with the internal test data that random forest uses within the 60% of data we provided for the model. The out of box error rate is estimated at .87%. The number of trees used were 500 with optimal mtry at 2.
+
+We now test the model against the 40% of the original data that we resreved to be test data.
+
+```{r,echo=TRUE}
+ confusionMatrix(testingPmlNonNACols$classe,predict(modfitRforest,testingPmlNonNACols))
+ 
+```
+
+The tests show an accuracy of 99.17 with a 95% confidence interval between 98.9% to 99.36 %. Based on this the estimated sample error rate is 0.83% which is slighty better than the out of box error estimated by using the training data set.
+
+
+Predictions for the Coursera Test data
+
+Once the models are complete we run the tests against the test data set provided by Coursera
+
+```{r,echo=TRUE}
+testPmlNonNACols <- testdata[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z")]
+courseraTestResults <- predict( modfitRforest,testPmlNonNACols) 
+courseraTestResults 
+ 
+```
+
+### Final results for the random forest model
+
+We expect close to a 100% match since the accuracy expected is over 99.5%. In actual comparison the model performed at 100% and correctly predicted all the Coursera testcases.
+
+### Fine tuning the random forest
+
+Randon forest does not need any additional cross validation but it is possible to fine tune training model by using a k fold cross validation for the data. Since this is more computing intensive the original sample traning data did not execute on the current hardware within a reasonable amount of time (60 minutes). So I created a smaller sample size to pass to the trainer.
+
+
+
+```{r,echo=TRUE}
+set.seed(1234)
+
+inTrainPml10 <- createDataPartition(y=traindata$classe,p=0.3,list=FALSE)
+trainingPml10 <- traindata[inTrainPml10,]
+testingPml10 <- traindata[-inTrainPml10,]
+
+trainingPmlNonNACols10 <- trainingPml10[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+testingPmlNonNACols10 <- testingPml10[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+testPmlNonNACols <- testdata[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z")]
+
+modfitRforest10 <- train(classe ~.,method="rf",data=trainingPmlNonNACols10,
+        trControl=trainControl(method="cv",number=10, repeats=2, verboseIter = TRUE), prox=TRUE)
+
+print(modfitRforest10)
+print(modfitRforest10$finalModel)
+confusionMatrix(testingPmlNonNACols10$classe,predict(modfitRforest10,testingPmlNonNACols10))
+courseraTestResults <- predict( modfitRforest10,testPmlNonNACols) 
+courseraTestResults
+
+```
+
+### Final results for the tweaked model
+
+With a sample size of 0.3 of the origial the k fold cross validation completes in a reasonable amount of time. The accuracy is 97.97 on the target with an out of box error estimate of 1.83%. The results on the coursera test cases however achieve a 100% target and it yields the same results. 
+
+With more processing power it may be possible to use more of the dataset to generate a higher accuracy with k fold cross validation. The default cross validation built into the random forests routine seems to be doing a fine job as is. 
+
