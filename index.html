@@ -19,30 +19,801 @@
     </section>
 
     <section class="main-content">
-      <h3>
-<a id="background" class="anchor" href="#background" aria-hidden="true"><span class="octicon octicon-link"></span></a>Background</h3>
+      <p>&lt;!DOCTYPE html&gt;</p>
 
-<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset). </p>
+<p></p>
 
+<p></p>
+
+<p>
+
+</p>
+
+<p></p>
+
+<p></p>Practical Machine Learning - Prediction Assignment Writeup
+
+
+
+<p>
+</p>
+
+
+
+
+
+
+
+code{white-space: pre;}
+
+<p></p>
+
+
+
+
+  pre:not([class]) {
+    background-color: white;
+  }
+
+
+
+
+<p></p>
+
+<p></p>
+
+
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+
+
+<div>
+
+
+<div id="header">
+<h1>
+<a id="practical-machine-learning---prediction-assignment-writeup" class="anchor" href="#practical-machine-learning---prediction-assignment-writeup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Practical Machine Learning - Prediction Assignment Writeup</h1>
+<h4>
+<a id="jag-padala" class="anchor" href="#jag-padala" aria-hidden="true"><span class="octicon octicon-link"></span></a><em>Jag Padala</em>
+</h4>
+<h4>
+<a id="jun-18-2015" class="anchor" href="#jun-18-2015" aria-hidden="true"><span class="octicon octicon-link"></span></a><em>Jun 18, 2015</em>
+</h4>
+</div>
+
+<p>In this project we will utilize several machine learning techniques to predict the behavior of users of fitness tracker equipment.</p>
+
+<div id="exploratory-analysis">
+<h2>
+<a id="exploratory-analysis" class="anchor" href="#exploratory-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exploratory Analysis</h2>
+<p>Let us do some exploratory analysis to get a basic understanding of the data set</p>
+<pre><code>suppressWarnings(library(ggplot2))
+suppressWarnings(library(caret))</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>setwd("/Users/apadala/Coursera/pml")
+traindata &lt;- read.csv("pml-training.csv")
+testdata &lt;- read.csv("pml-testing.csv")
+
+set.seed(1234)
+
+inTrainPml &lt;- createDataPartition(y=traindata$classe,p=0.6,list=FALSE)
+trainingPml &lt;- traindata[inTrainPml,]
+testingPml &lt;- traindata[-inTrainPml,]
+
+summary(trainingPml)</code></pre>
+<pre><code>##        X            user_name    raw_timestamp_part_1 raw_timestamp_part_2
+##  Min.   :    2   adelmo  :2327   Min.   :1.322e+09    Min.   :   294      
+##  1st Qu.: 4936   carlitos:1881   1st Qu.:1.323e+09    1st Qu.:258646      
+##  Median : 9794   charles :2147   Median :1.323e+09    Median :496316      
+##  Mean   : 9808   eurico  :1878   Mean   :1.323e+09    Mean   :501632      
+##  3rd Qu.:14708   jeremy  :1985   3rd Qu.:1.323e+09    3rd Qu.:752362      
+##  Max.   :19621   pedro   :1558   Max.   :1.323e+09    Max.   :998750      
+##                                                                           
+##           cvtd_timestamp new_window    num_window    roll_belt     
+##  5/12/11 11:24   : 904   no :11540   Min.   :  1   Min.   :-28.90  
+##  28/11/2011 14:14: 898   yes:  236   1st Qu.:221   1st Qu.:  1.11  
+##  5/12/11 11:25   : 860               Median :421   Median :114.00  
+##  30/11/2011 17:11: 857               Mean   :430   Mean   : 64.50  
+##  2/12/11 14:57   : 846               3rd Qu.:644   3rd Qu.:123.00  
+##  5/12/11 14:23   : 828               Max.   :864   Max.   :162.00  
+##  (Other)         :6583                                             
+##    pitch_belt          yaw_belt       total_accel_belt kurtosis_roll_belt
+##  Min.   :-55.8000   Min.   :-179.00   Min.   : 0.00             :11540   
+##  1st Qu.:  1.8275   1st Qu.: -88.30   1st Qu.: 3.00    #DIV/0!  :    8   
+##  Median :  5.2900   Median : -12.60   Median :17.00    -0.01685 :    1   
+##  Mean   :  0.3029   Mean   : -11.15   Mean   :11.32    -0.025513:    1   
+##  3rd Qu.: 15.0000   3rd Qu.:  13.10   3rd Qu.:18.00    -0.033935:    1   
+##  Max.   : 60.3000   Max.   : 179.00   Max.   :28.00    -0.06016 :    1   
+##                                                        (Other)  :  224   
+##  kurtosis_picth_belt kurtosis_yaw_belt skewness_roll_belt
+##           :11540            :11540              :11540   
+##  #DIV/0!  :   23     #DIV/0!:  236     #DIV/0!  :    7   
+##  -0.15095 :    3                       -0.003095:    1   
+##  -2.060105:    3                       -0.010002:    1   
+##  11.094417:    3                       -0.01402 :    1   
+##  -0.684748:    2                       -0.015465:    1   
+##  (Other)  :  202                       (Other)  :  225   
+##  skewness_roll_belt.1 skewness_yaw_belt max_roll_belt     max_picth_belt 
+##           :11540             :11540     Min.   :-94.300   Min.   : 3.00  
+##  #DIV/0!  :   23      #DIV/0!:  236     1st Qu.:-87.900   1st Qu.: 5.00  
+##  0        :    4                        Median : -4.900   Median :18.00  
+##  -0.189082:    2                        Mean   : -4.565   Mean   :13.34  
+##  -0.587156:    2                        3rd Qu.: 19.175   3rd Qu.:19.25  
+##  -1.159179:    2                        Max.   :177.000   Max.   :30.00  
+##  (Other)  :  203                        NA's   :11540     NA's   :11540  
+##   max_yaw_belt   min_roll_belt     min_pitch_belt   min_yaw_belt  
+##         :11540   Min.   :-94.400   Min.   : 0.0           :11540  
+##  -1.2   :   18   1st Qu.:-88.200   1st Qu.: 3.0    -1.2   :   18  
+##  -1.4   :   17   Median : -6.900   Median :17.0    -1.4   :   17  
+##  -1.1   :   15   Mean   : -6.504   Mean   :11.2    -1.1   :   15  
+##  -1.5   :   15   3rd Qu.: 11.425   3rd Qu.:17.0    -1.5   :   15  
+##  -0.7   :   11   Max.   :173.000   Max.   :22.0    -0.7   :   11  
+##  (Other):  160   NA's   :11540     NA's   :11540   (Other):  160  
+##  amplitude_roll_belt amplitude_pitch_belt amplitude_yaw_belt
+##  Min.   : 0.000      Min.   : 0.000              :11540     
+##  1st Qu.: 0.300      1st Qu.: 1.000       #DIV/0!:    8     
+##  Median : 1.000      Median : 1.000       0      :  228     
+##  Mean   : 1.939      Mean   : 2.144                         
+##  3rd Qu.: 2.000      3rd Qu.: 2.000                         
+##  Max.   :27.860      Max.   :10.000                         
+##  NA's   :11540       NA's   :11540                          
+##  var_total_accel_belt avg_roll_belt    stddev_roll_belt var_roll_belt    
+##  Min.   : 0.000       Min.   :-18.80   Min.   : 0.000   Min.   :  0.000  
+##  1st Qu.: 0.100       1st Qu.:  1.20   1st Qu.: 0.189   1st Qu.:  0.000  
+##  Median : 0.200       Median :116.90   Median : 0.400   Median :  0.100  
+##  Mean   : 0.929       Mean   : 71.22   Mean   : 1.291   Mean   :  7.705  
+##  3rd Qu.: 0.300       3rd Qu.:124.00   3rd Qu.: 0.616   3rd Qu.:  0.410  
+##  Max.   :11.000       Max.   :157.40   Max.   :14.200   Max.   :200.700  
+##  NA's   :11540        NA's   :11540    NA's   :11540    NA's   :11540    
+##  avg_pitch_belt    stddev_pitch_belt var_pitch_belt   avg_yaw_belt    
+##  Min.   :-45.300   Min.   :0.000     Min.   :0.00    Min.   :-94.400  
+##  1st Qu.:  1.725   1st Qu.:0.200     1st Qu.:0.00    1st Qu.:-88.000  
+##  Median :  5.600   Median :0.300     Median :0.10    Median : -5.900  
+##  Mean   :  0.919   Mean   :0.581     Mean   :0.73    Mean   : -5.531  
+##  3rd Qu.: 16.200   3rd Qu.:0.700     3rd Qu.:0.50    3rd Qu.: 16.900  
+##  Max.   : 41.000   Max.   :3.100     Max.   :9.30    Max.   :173.400  
+##  NA's   :11540     NA's   :11540     NA's   :11540   NA's   :11540    
+##  stddev_yaw_belt  var_yaw_belt     gyros_belt_x        gyros_belt_y     
+##  Min.   :0.000   Min.   : 0.000   Min.   :-1.040000   Min.   :-0.64000  
+##  1st Qu.:0.100   1st Qu.: 0.010   1st Qu.:-0.030000   1st Qu.: 0.00000  
+##  Median :0.300   Median : 0.090   Median : 0.030000   Median : 0.02000  
+##  Mean   :0.624   Mean   : 1.349   Mean   :-0.004883   Mean   : 0.03994  
+##  3rd Qu.:0.600   3rd Qu.: 0.382   3rd Qu.: 0.110000   3rd Qu.: 0.11000  
+##  Max.   :8.700   Max.   :75.920   Max.   : 2.220000   Max.   : 0.64000  
+##  NA's   :11540   NA's   :11540                                          
+##   gyros_belt_z      accel_belt_x      accel_belt_y     accel_belt_z    
+##  Min.   :-1.4600   Min.   :-82.000   Min.   :-69.00   Min.   :-269.00  
+##  1st Qu.:-0.2000   1st Qu.:-21.000   1st Qu.:  3.00   1st Qu.:-162.00  
+##  Median :-0.1000   Median :-15.000   Median : 35.50   Median :-152.50  
+##  Mean   :-0.1313   Mean   : -5.609   Mean   : 30.21   Mean   : -72.79  
+##  3rd Qu.:-0.0200   3rd Qu.: -5.000   3rd Qu.: 61.00   3rd Qu.:  27.00  
+##  Max.   : 1.6200   Max.   : 85.000   Max.   :109.00   Max.   : 105.00  
+##                                                                        
+##  magnet_belt_x    magnet_belt_y   magnet_belt_z       roll_arm      
+##  Min.   :-49.00   Min.   :360.0   Min.   :-621.0   Min.   :-180.00  
+##  1st Qu.:  9.00   1st Qu.:581.0   1st Qu.:-376.0   1st Qu.: -31.12  
+##  Median : 34.00   Median :601.0   Median :-320.0   Median :   0.00  
+##  Mean   : 55.34   Mean   :593.5   Mean   :-346.2   Mean   :  18.43  
+##  3rd Qu.: 59.00   3rd Qu.:610.0   3rd Qu.:-306.0   3rd Qu.:  77.70  
+##  Max.   :485.00   Max.   :669.0   Max.   : 293.0   Max.   : 180.00  
+##                                                                     
+##    pitch_arm          yaw_arm          total_accel_arm var_accel_arm    
+##  Min.   :-88.800   Min.   :-180.0000   Min.   : 1.00   Min.   :  0.000  
+##  1st Qu.:-26.000   1st Qu.: -43.5000   1st Qu.:17.00   1st Qu.:  7.843  
+##  Median :  0.000   Median :   0.0000   Median :26.50   Median : 38.767  
+##  Mean   : -4.616   Mean   :  -0.6392   Mean   :25.37   Mean   : 51.562  
+##  3rd Qu.: 11.300   3rd Qu.:  46.0250   3rd Qu.:32.00   3rd Qu.: 77.616  
+##  Max.   : 88.500   Max.   : 180.0000   Max.   :65.00   Max.   :253.010  
+##                                                        NA's   :11540    
+##   avg_roll_arm     stddev_roll_arm    var_roll_arm       avg_pitch_arm    
+##  Min.   :-166.67   Min.   :  0.000   Min.   :    0.000   Min.   :-81.773  
+##  1st Qu.: -35.54   1st Qu.:  1.210   1st Qu.:    1.464   1st Qu.:-22.433  
+##  Median :   0.00   Median :  5.345   Median :   28.573   Median :  0.000  
+##  Mean   :  14.20   Mean   : 11.788   Mean   :  521.297   Mean   : -2.883  
+##  3rd Qu.:  76.27   3rd Qu.: 14.917   3rd Qu.:  222.528   3rd Qu.: 10.679  
+##  Max.   : 160.78   Max.   :161.964   Max.   :26232.208   Max.   : 75.659  
+##  NA's   :11540     NA's   :11540     NA's   :11540       NA's   :11540    
+##  stddev_pitch_arm var_pitch_arm       avg_yaw_arm       stddev_yaw_arm   
+##  Min.   : 0.000   Min.   :   0.000   Min.   :-173.283   Min.   :  0.000  
+##  1st Qu.: 1.675   1st Qu.:   2.806   1st Qu.: -30.917   1st Qu.:  2.734  
+##  Median : 7.945   Median :  63.119   Median :   0.000   Median : 16.256  
+##  Mean   :10.376   Mean   : 197.892   Mean   :   2.264   Mean   : 21.366  
+##  3rd Qu.:16.606   3rd Qu.: 275.762   3rd Qu.:  38.937   3rd Qu.: 33.036  
+##  Max.   :43.412   Max.   :1884.565   Max.   : 152.000   Max.   :133.562  
+##  NA's   :11540    NA's   :11540      NA's   :11540      NA's   :11540    
+##   var_yaw_arm         gyros_arm_x        gyros_arm_y      gyros_arm_z     
+##  Min.   :    0.000   Min.   :-6.37000   Min.   :-3.440   Min.   :-2.3300  
+##  1st Qu.:    7.487   1st Qu.:-1.35000   1st Qu.:-0.790   1st Qu.:-0.0700  
+##  Median :  264.248   Median : 0.06000   Median :-0.240   Median : 0.2300  
+##  Mean   :  891.480   Mean   : 0.03313   Mean   :-0.252   Mean   : 0.2696  
+##  3rd Qu.: 1091.373   3rd Qu.: 1.57000   3rd Qu.: 0.160   3rd Qu.: 0.7200  
+##  Max.   :17838.878   Max.   : 4.87000   Max.   : 2.840   Max.   : 2.2000  
+##  NA's   :11540                                                            
+##   accel_arm_x       accel_arm_y       accel_arm_z       magnet_arm_x   
+##  Min.   :-404.00   Min.   :-318.00   Min.   :-630.00   Min.   :-584.0  
+##  1st Qu.:-241.00   1st Qu.: -54.00   1st Qu.:-142.00   1st Qu.:-297.0  
+##  Median : -41.00   Median :  14.00   Median : -47.00   Median : 290.0  
+##  Mean   : -59.79   Mean   :  32.44   Mean   : -70.44   Mean   : 194.1  
+##  3rd Qu.:  84.00   3rd Qu.: 138.00   3rd Qu.:  24.25   3rd Qu.: 640.0  
+##  Max.   : 435.00   Max.   : 308.00   Max.   : 292.00   Max.   : 782.0  
+##                                                                        
+##   magnet_arm_y     magnet_arm_z    kurtosis_roll_arm kurtosis_picth_arm
+##  Min.   :-392.0   Min.   :-596.0           :11540            :11540    
+##  1st Qu.: -12.0   1st Qu.: 133.8   #DIV/0! :   42    #DIV/0! :   44    
+##  Median : 200.0   Median : 446.0   -0.05051:    1    -0.00484:    1    
+##  Mean   : 155.4   Mean   : 307.3   -0.05695:    1    -0.02967:    1    
+##  3rd Qu.: 322.0   3rd Qu.: 545.0   -0.09698:    1    -0.07394:    1    
+##  Max.   : 583.0   Max.   : 694.0   -0.14153:    1    -0.10385:    1    
+##                                    (Other) :  190    (Other) :  188    
+##  kurtosis_yaw_arm skewness_roll_arm skewness_pitch_arm skewness_yaw_arm
+##          :11540           :11540            :11540             :11540  
+##  #DIV/0! :    9   #DIV/0! :   41    #DIV/0! :   44     #DIV/0! :    9  
+##  0.55844 :    2   -0.00696:    1    -0.00184:    1     -0.00562:    1  
+##  -0.01548:    1   -0.03359:    1    -0.01185:    1     -0.04866:    1  
+##  -0.02101:    1   -0.03484:    1    -0.01247:    1     -0.05413:    1  
+##  -0.04059:    1   -0.04254:    1    -0.02063:    1     -0.06077:    1  
+##  (Other) :  222   (Other) :  191    (Other) :  188     (Other) :  223  
+##   max_roll_arm    max_picth_arm      max_yaw_arm     min_roll_arm   
+##  Min.   :-73.10   Min.   :-173.00   Min.   : 4.00   Min.   :-88.80  
+##  1st Qu.:  0.00   1st Qu.: -10.47   1st Qu.:29.00   1st Qu.:-41.75  
+##  Median :  8.15   Median :  19.95   Median :34.00   Median :-21.35  
+##  Mean   : 12.92   Mean   :  35.96   Mean   :35.09   Mean   :-19.29  
+##  3rd Qu.: 29.88   3rd Qu.: 101.00   3rd Qu.:40.00   3rd Qu.:  0.00  
+##  Max.   : 85.50   Max.   : 180.00   Max.   :65.00   Max.   : 66.40  
+##  NA's   :11540    NA's   :11540     NA's   :11540   NA's   :11540   
+##  min_pitch_arm      min_yaw_arm    amplitude_roll_arm amplitude_pitch_arm
+##  Min.   :-179.00   Min.   : 1.00   Min.   :  0.000    Min.   :  0.00     
+##  1st Qu.: -76.72   1st Qu.: 7.75   1st Qu.:  5.475    1st Qu.: 10.28     
+##  Median : -32.95   Median :13.00   Median : 28.150    Median : 53.65     
+##  Mean   : -32.18   Mean   :14.86   Mean   : 32.212    Mean   : 68.14     
+##  3rd Qu.:   0.00   3rd Qu.:19.25   3rd Qu.: 51.080    3rd Qu.:113.83     
+##  Max.   : 152.00   Max.   :38.00   Max.   :118.000    Max.   :359.00     
+##  NA's   :11540     NA's   :11540   NA's   :11540      NA's   :11540      
+##  amplitude_yaw_arm roll_dumbbell     pitch_dumbbell     yaw_dumbbell     
+##  Min.   : 0.00     Min.   :-153.51   Min.   :-149.59   Min.   :-150.871  
+##  1st Qu.:10.75     1st Qu.: -18.60   1st Qu.: -39.94   1st Qu.: -77.470  
+##  Median :21.00     Median :  48.17   Median : -20.46   Median :   0.000  
+##  Mean   :20.23     Mean   :  23.69   Mean   : -10.50   Mean   :   2.151  
+##  3rd Qu.:28.00     3rd Qu.:  67.78   3rd Qu.:  17.59   3rd Qu.:  80.414  
+##  Max.   :52.00     Max.   : 153.55   Max.   : 149.40   Max.   : 154.952  
+##  NA's   :11540                                                           
+##  kurtosis_roll_dumbbell kurtosis_picth_dumbbell kurtosis_yaw_dumbbell
+##         :11540                 :11540                  :11540        
+##  #DIV/0!:    4          -0.9334:    2           #DIV/0!:  236        
+##  -2.0851:    2          -2.0851:    2                                
+##  -0.0115:    1          -0.0163:    1                                
+##  -0.0262:    1          -0.0233:    1                                
+##  -0.0334:    1          -0.0322:    1                                
+##  (Other):  227          (Other):  229                                
+##  skewness_roll_dumbbell skewness_pitch_dumbbell skewness_yaw_dumbbell
+##         :11540                 :11540                  :11540        
+##  #DIV/0!:    3          0.109  :    2           #DIV/0!:  236        
+##  0.111  :    2          -0.0053:    1                                
+##  1.0312 :    2          -0.0084:    1                                
+##  -0.0096:    1          -0.0166:    1                                
+##  -0.0234:    1          -0.0452:    1                                
+##  (Other):  227          (Other):  230                                
+##  max_roll_dumbbell max_picth_dumbbell max_yaw_dumbbell min_roll_dumbbell
+##  Min.   :-70.10    Min.   :-112.90           :11540    Min.   :-123.30  
+##  1st Qu.:-27.52    1st Qu.: -68.72    -0.6   :   14    1st Qu.: -59.02  
+##  Median : 16.20    Median :  43.30    0.2    :   13    Median : -41.30  
+##  Mean   : 12.50    Mean   :  33.34    -0.8   :   10    Mean   : -38.39  
+##  3rd Qu.: 48.52    3rd Qu.: 133.35    0      :   10    3rd Qu.: -23.93  
+##  Max.   :129.80    Max.   : 154.50    -0.3   :    9    Max.   :  41.50  
+##  NA's   :11540     NA's   :11540      (Other):  180    NA's   :11540    
+##  min_pitch_dumbbell min_yaw_dumbbell amplitude_roll_dumbbell
+##  Min.   :-146.20           :11540    Min.   :  0.00         
+##  1st Qu.: -92.17    -0.6   :   14    1st Qu.: 13.27         
+##  Median : -60.00    0.2    :   13    Median : 33.19         
+##  Mean   : -28.92    -0.8   :   10    Mean   : 50.89         
+##  3rd Qu.:  31.45    0      :   10    3rd Qu.: 74.16         
+##  Max.   : 116.60    -0.3   :    9    Max.   :232.79         
+##  NA's   :11540      (Other):  180    NA's   :11540          
+##  amplitude_pitch_dumbbell amplitude_yaw_dumbbell total_accel_dumbbell
+##  Min.   :  0.00                  :11540          Min.   : 0.00       
+##  1st Qu.: 16.54           #DIV/0!:    4          1st Qu.: 4.00       
+##  Median : 41.10           0      :  232          Median :10.00       
+##  Mean   : 62.26                                  Mean   :13.57       
+##  3rd Qu.: 93.47                                  3rd Qu.:19.00       
+##  Max.   :263.60                                  Max.   :58.00       
+##  NA's   :11540                                                       
+##  var_accel_dumbbell avg_roll_dumbbell stddev_roll_dumbbell
+##  Min.   :  0.000    Min.   :-117.02   Min.   :  0.00      
+##  1st Qu.:  0.342    1st Qu.:  -9.24   1st Qu.:  4.25      
+##  Median :  0.988    Median :  48.63   Median : 11.72      
+##  Mean   :  4.508    Mean   :  23.98   Mean   : 18.58      
+##  3rd Qu.:  3.314    3rd Qu.:  63.35   3rd Qu.: 23.62      
+##  Max.   :230.428    Max.   : 125.99   Max.   :123.78      
+##  NA's   :11540      NA's   :11540     NA's   :11540       
+##  var_roll_dumbbell  avg_pitch_dumbbell stddev_pitch_dumbbell
+##  Min.   :    0.00   Min.   :-70.73     Min.   : 0.000       
+##  1st Qu.:   18.07   1st Qu.:-37.91     1st Qu.: 3.023       
+##  Median :  137.44   Median :-17.05     Median : 7.806       
+##  Mean   :  827.05   Mean   :-11.91     Mean   :12.262       
+##  3rd Qu.:  557.74   3rd Qu.: 12.97     3rd Qu.:18.209       
+##  Max.   :15321.01   Max.   : 82.21     Max.   :62.881       
+##  NA's   :11540      NA's   :11540      NA's   :11540        
+##  var_pitch_dumbbell avg_yaw_dumbbell   stddev_yaw_dumbbell
+##  Min.   :   0.00    Min.   :-117.950   Min.   :  0.000    
+##  1st Qu.:   9.14    1st Qu.: -77.008   1st Qu.:  3.461    
+##  Median :  60.94    Median :  11.368   Median :  9.467    
+##  Mean   : 299.03    Mean   :   2.387   Mean   : 15.981    
+##  3rd Qu.: 331.57    3rd Qu.:  75.471   3rd Qu.: 22.805    
+##  Max.   :3953.97    Max.   : 134.905   Max.   :107.088    
+##  NA's   :11540      NA's   :11540      NA's   :11540      
+##  var_yaw_dumbbell   gyros_dumbbell_x    gyros_dumbbell_y  
+##  Min.   :    0.00   Min.   :-204.0000   Min.   :-2.10000  
+##  1st Qu.:   11.98   1st Qu.:  -0.0300   1st Qu.:-0.14000  
+##  Median :   89.62   Median :   0.1300   Median : 0.03000  
+##  Mean   :  573.49   Mean   :   0.1536   Mean   : 0.04977  
+##  3rd Qu.:  520.13   3rd Qu.:   0.3500   3rd Qu.: 0.21000  
+##  Max.   :11467.91   Max.   :   2.2200   Max.   :52.00000  
+##  NA's   :11540                                            
+##  gyros_dumbbell_z   accel_dumbbell_x  accel_dumbbell_y  accel_dumbbell_z 
+##  Min.   : -2.3000   Min.   :-419.00   Min.   :-189.00   Min.   :-319.00  
+##  1st Qu.: -0.3100   1st Qu.: -50.00   1st Qu.:  -8.00   1st Qu.:-141.00  
+##  Median : -0.1300   Median :  -8.00   Median :  39.00   Median :   0.00  
+##  Mean   : -0.1194   Mean   : -27.83   Mean   :  51.94   Mean   : -37.18  
+##  3rd Qu.:  0.0300   3rd Qu.:  11.00   3rd Qu.: 109.00   3rd Qu.:  38.00  
+##  Max.   :317.0000   Max.   : 235.00   Max.   : 310.00   Max.   : 318.00  
+##                                                                          
+##  magnet_dumbbell_x magnet_dumbbell_y magnet_dumbbell_z  roll_forearm     
+##  Min.   :-639.0    Min.   :-3600.0   Min.   :-249.00   Min.   :-180.000  
+##  1st Qu.:-535.0    1st Qu.:  231.0   1st Qu.: -45.00   1st Qu.:  -0.905  
+##  Median :-478.0    Median :  311.0   Median :  13.00   Median :  21.500  
+##  Mean   :-328.5    Mean   :  221.6   Mean   :  46.41   Mean   :  34.167  
+##  3rd Qu.:-304.0    3rd Qu.:  391.0   3rd Qu.:  96.00   3rd Qu.: 140.000  
+##  Max.   : 592.0    Max.   :  632.0   Max.   : 447.00   Max.   : 180.000  
+##                                                                          
+##  pitch_forearm     yaw_forearm      kurtosis_roll_forearm
+##  Min.   :-72.50   Min.   :-180.00          :11540        
+##  1st Qu.:  0.00   1st Qu.: -69.30   #DIV/0!:   51        
+##  Median :  9.48   Median :   0.00   -0.8079:    2        
+##  Mean   : 10.95   Mean   :  18.45   -0.0359:    1        
+##  3rd Qu.: 28.80   3rd Qu.: 110.00   -0.0781:    1        
+##  Max.   : 88.70   Max.   : 180.00   -0.1363:    1        
+##                                     (Other):  180        
+##  kurtosis_picth_forearm kurtosis_yaw_forearm skewness_roll_forearm
+##         :11540                 :11540               :11540        
+##  #DIV/0!:   52          #DIV/0!:  236        #DIV/0!:   50        
+##  -0.0442:    1                               -0.1912:    2        
+##  -0.0523:    1                               -0.0063:    1        
+##  -0.092 :    1                               -0.011 :    1        
+##  -0.1002:    1                               -0.0237:    1        
+##  (Other):  180                               (Other):  181        
+##  skewness_pitch_forearm skewness_yaw_forearm max_roll_forearm
+##         :11540                 :11540        Min.   :-66.60  
+##  #DIV/0!:   52          #DIV/0!:  236        1st Qu.:  0.00  
+##  0      :    2                               Median : 26.15  
+##  -0.0131:    1                               Mean   : 24.12  
+##  -0.0405:    1                               3rd Qu.: 45.35  
+##  -0.0599:    1                               Max.   : 89.80  
+##  (Other):  179                               NA's   :11540   
+##  max_picth_forearm max_yaw_forearm min_roll_forearm  min_pitch_forearm
+##  Min.   :-151.00          :11540   Min.   :-72.500   Min.   :-180.00  
+##  1st Qu.:   0.00   #DIV/0!:   51   1st Qu.: -3.700   1st Qu.:-175.00  
+##  Median : 112.50   -1.3   :   19   Median :  0.000   Median : -48.40  
+##  Mean   :  80.25   -1.2   :   18   Mean   : -0.312   Mean   : -56.95  
+##  3rd Qu.: 175.00   -1.4   :   14   3rd Qu.: 12.650   3rd Qu.:   0.00  
+##  Max.   : 180.00   -1.6   :   13   Max.   : 62.100   Max.   : 164.00  
+##  NA's   :11540     (Other):  121   NA's   :11540     NA's   :11540    
+##  min_yaw_forearm amplitude_roll_forearm amplitude_pitch_forearm
+##         :11540   Min.   :  0.000        Min.   :  0.0          
+##  #DIV/0!:   51   1st Qu.:  1.028        1st Qu.:  1.0          
+##  -1.3   :   19   Median : 15.970        Median : 83.7          
+##  -1.2   :   18   Mean   : 24.429        Mean   :137.2          
+##  -1.4   :   14   3rd Qu.: 39.403        3rd Qu.:349.2          
+##  -1.6   :   13   Max.   :120.300        Max.   :360.0          
+##  (Other):  121   NA's   :11540          NA's   :11540          
+##  amplitude_yaw_forearm total_accel_forearm var_accel_forearm
+##         :11540         Min.   :  0.00      Min.   :  0.000  
+##  #DIV/0!:   51         1st Qu.: 29.00      1st Qu.:  6.974  
+##  0      :  185         Median : 36.00      Median : 18.898  
+##                        Mean   : 34.72      Mean   : 30.676  
+##                        3rd Qu.: 41.00      3rd Qu.: 47.601  
+##                        Max.   :108.00      Max.   :158.816  
+##                                            NA's   :11540    
+##  avg_roll_forearm  stddev_roll_forearm var_roll_forearm  
+##  Min.   :-177.13   Min.   :  0.000     Min.   :    0.00  
+##  1st Qu.:   0.00   1st Qu.:  0.339     1st Qu.:    0.11  
+##  Median :  14.36   Median :  6.972     Median :   48.66  
+##  Mean   :  36.54   Mean   : 42.380     Mean   : 5366.19  
+##  3rd Qu.: 106.12   3rd Qu.: 93.055     3rd Qu.: 8660.85  
+##  Max.   : 177.26   Max.   :179.171     Max.   :32102.24  
+##  NA's   :11540     NA's   :11540       NA's   :11540     
+##  avg_pitch_forearm stddev_pitch_forearm var_pitch_forearm 
+##  Min.   :-68.17    Min.   : 0.000       Min.   :   0.000  
+##  1st Qu.:  0.00    1st Qu.: 0.281       1st Qu.:   0.079  
+##  Median : 12.10    Median : 4.770       Median :  22.756  
+##  Mean   : 11.75    Mean   : 7.918       Mean   : 141.664  
+##  3rd Qu.: 30.48    3rd Qu.:12.877       3rd Qu.: 165.822  
+##  Max.   : 72.09    Max.   :39.561       Max.   :1565.055  
+##  NA's   :11540     NA's   :11540        NA's   :11540     
+##  avg_yaw_forearm   stddev_yaw_forearm var_yaw_forearm   
+##  Min.   :-153.08   Min.   :  0.00     Min.   :    0.00  
+##  1st Qu.: -14.24   1st Qu.:  0.49     1st Qu.:    0.24  
+##  Median :   0.00   Median : 25.40     Median :  645.57  
+##  Mean   :  18.98   Mean   : 46.00     Mean   : 4957.98  
+##  3rd Qu.:  85.54   3rd Qu.: 89.03     3rd Qu.: 7929.03  
+##  Max.   : 167.33   Max.   :197.51     Max.   :39009.33  
+##  NA's   :11540     NA's   :11540      NA's   :11540     
+##  gyros_forearm_x    gyros_forearm_y     gyros_forearm_z   
+##  Min.   :-22.0000   Min.   : -7.02000   Min.   : -8.0900  
+##  1st Qu.: -0.2200   1st Qu.: -1.49000   1st Qu.: -0.1800  
+##  Median :  0.0500   Median :  0.03000   Median :  0.0800  
+##  Mean   :  0.1522   Mean   :  0.08676   Mean   :  0.1613  
+##  3rd Qu.:  0.5600   3rd Qu.:  1.64000   3rd Qu.:  0.4900  
+##  Max.   :  3.5200   Max.   :311.00000   Max.   :231.0000  
+##                                                           
+##  accel_forearm_x   accel_forearm_y  accel_forearm_z   magnet_forearm_x 
+##  Min.   :-498.00   Min.   :-595.0   Min.   :-446.00   Min.   :-1280.0  
+##  1st Qu.:-179.00   1st Qu.:  57.0   1st Qu.:-181.00   1st Qu.: -618.0  
+##  Median : -57.00   Median : 201.0   Median : -36.00   Median : -387.5  
+##  Mean   : -63.01   Mean   : 163.8   Mean   : -53.56   Mean   : -313.9  
+##  3rd Qu.:  76.00   3rd Qu.: 312.0   3rd Qu.:  27.00   3rd Qu.:  -75.0  
+##  Max.   : 359.00   Max.   : 923.0   Max.   : 285.00   Max.   :  672.0  
+##                                                                        
+##  magnet_forearm_y magnet_forearm_z classe  
+##  Min.   :-896.0   Min.   :-973     A:3348  
+##  1st Qu.:  -1.0   1st Qu.: 185     B:2279  
+##  Median : 587.0   Median : 507     C:2054  
+##  Mean   : 378.7   Mean   : 391     D:1930  
+##  3rd Qu.: 736.0   3rd Qu.: 652     E:2165  
+##  Max.   :1450.0   Max.   :1090             
+## </code></pre>
+<p>We loaded the data and created a training and test dataset. From the summary we can see that there are 159 predictors in the data for predicting the value of the classe. We can see that classe is a categorical variable with 5 possible results.</p>
+<p>We can also see that we have measured the movements for 6 users over a period of time. The timestamp for the measurements and the window of the measurements are recorded. Since the users were instructed to deliberately perform some good and some bad repitions we need to make sure there is no target leakage by including measurements such as window and timestamp that would ovefit our model and lead to incorrect predictions.</p>
+<p>We then need to start looking at various other measurements that were taken.</p>
+<div id="data-clean-up">
 <h3>
-<a id="goals-of-the-project" class="anchor" href="#goals-of-the-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Goals of the project</h3>
+<a id="data-clean-up" class="anchor" href="#data-clean-up" aria-hidden="true"><span class="octicon octicon-link"></span></a>DATA CLEAN UP</h3>
+<p>The first observation that pops up on closer inspection of the summary is the number of columns that seem to have a number of NA values. This means that the sensors for measuring these variables are not accurate/reliable. For example kurtosis_roll_belt has a total of 11518 measurements that were empty out of the set of 11776 measurements. So this cannot be used for an meaningful prediction. kurtosis_picth_belt kurtosis_yaw_belt skewness_roll_belt and skewness_yaw_belt. We also notice another pattern in variables like max_roll_belt max_yaw_belt min_roll_belt min_yaw_belt amplitude_yaw_belt amplitude_pitch_belt where a number of measurements are NA. Infact these predictors just have NA instead of empty values in 11518 cases. All of these predictors need to be removed so we can get some accurate predictions.</p>
+<pre><code>trainingPmlNonNACols &lt;- trainingPml[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
 
-<p>The goal of the project is to predict the execution of how well the users are performing the set of exercises using all the predictor variables available.</p>
+testingPmlNonNACols &lt;- testingPml[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]</code></pre>
+<p>Now that we have cleaned up the data we can start fitting various models and see how the models perform</p>
+</div>
 
+<div id="model-training-1">
 <h3>
-<a id="approach" class="anchor" href="#approach" aria-hidden="true"><span class="octicon octicon-link"></span></a>Approach</h3>
+<a id="model-training-1" class="anchor" href="#model-training-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Model Training 1</h3>
+<p>Trees : We will first fit a tree model using the rpart package in caret. We will analyze the accuracy of the prediction for the model</p>
+<pre><code> modfitRpart &lt;- train(classe ~.,method="rpart",data=trainingPmlNonNACols)</code></pre>
+<pre><code>## Loading required package: rpart</code></pre>
+<pre><code> modfitRpart$finalModel</code></pre>
+<pre><code>## n= 11776 
+## 
+## node), split, n, loss, yval, (yprob)
+##       * denotes terminal node
+## 
+##  1) root 11776 8428 A (0.28 0.19 0.17 0.16 0.18)  
+##    2) roll_belt&lt; 130.5 10774 7436 A (0.31 0.21 0.19 0.18 0.11)  
+##      4) pitch_forearm&lt; -34.55 919    2 A (1 0.0022 0 0 0) *
+##      5) pitch_forearm&gt;=-34.55 9855 7434 A (0.25 0.23 0.21 0.2 0.12)  
+##       10) magnet_dumbbell_y&lt; 436.5 8314 5944 A (0.29 0.18 0.24 0.19 0.11)  
+##         20) roll_forearm&lt; 122.5 5137 3022 A (0.41 0.18 0.18 0.17 0.061) *
+##         21) roll_forearm&gt;=122.5 3177 2124 C (0.08 0.18 0.33 0.23 0.18) *
+##       11) magnet_dumbbell_y&gt;=436.5 1541  743 B (0.033 0.52 0.039 0.23 0.18) *
+##    3) roll_belt&gt;=130.5 1002   10 E (0.01 0 0 0 0.99) *</code></pre>
+<pre><code>  library(rattle)</code></pre>
+<pre><code>## Rattle: A free graphical interface for data mining with R.
+## Version 3.4.1 Copyright (c) 2006-2014 Togaware Pty Ltd.
+## Type 'rattle()' to shake, rattle, and roll your data.</code></pre>
+<pre><code>  fancyRpartPlot(modfitRpart$finalModel)</code></pre>
+<p><img title alt width="672"></p>
+<pre><code>  modfitRpart</code></pre>
+<pre><code>## CART 
+## 
+## 11776 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## 
+## Summary of sample sizes: 11776, 11776, 11776, 11776, 11776, 11776, ... 
+## 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa       Accuracy SD  Kappa SD  
+##   0.03618889  0.5232124  0.38448962  0.02470143   0.03890642
+##   0.06110584  0.4018777  0.18592797  0.06028161   0.09852178
+##   0.11651637  0.3320531  0.07413223  0.04188912   0.06186040
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.03618889.</code></pre>
+<p>As we can see the accuracy is pretty poor. However the model does give us some insight into some of the significant variables such as roll_belt, pitch_forearm, magnet_dumbbell_y and roll_forearm that seem to have a higher relevance to predict the outcome for classe.</p>
+<p>Since the accuracy of predictions is only 52% the our of sample error rate would be unacceptable.</p>
+</div>
 
-<p>We will perform the following steps</p>
+<div id="model-training-2">
+<h3>
+<a id="model-training-2" class="anchor" href="#model-training-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Model Training 2</h3>
+<p>The next model we will try out is the random forest. This may be a better choice for this kind of data since random forest models are good for data with a large number of variables. It estimates the variables that are important so we can get a fairly accurate idea of the variables used for the end result</p>
+<pre><code>modfitRforest &lt;- train(classe ~.,method="rf",data=trainingPmlNonNACols)</code></pre>
+<pre><code>## Loading required package: randomForest
+## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre><code>print(modfitRforest)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 11776 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## 
+## Summary of sample sizes: 11776, 11776, 11776, 11776, 11776, 11776, ... 
+## 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
+##    2    0.9870336  0.9835895  0.001655951  0.002103040
+##   27    0.9868318  0.9833367  0.001919397  0.002427099
+##   52    0.9787137  0.9730624  0.005580349  0.007067277
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 2.</code></pre>
+<pre><code>print(modfitRforest$finalModel)</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(x = x, y = y, mtry = param$mtry) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 2
+## 
+##         OOB estimate of  error rate: 0.87%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 3343    2    0    2    1 0.001493429
+## B   21 2252    6    0    0 0.011847301
+## C    0   20 2028    6    0 0.012658228
+## D    0    0   34 1894    2 0.018652850
+## E    0    1    2    6 2156 0.004157044</code></pre>
+</div>
 
-<ol>
-<li>Loading the data. We will load the data into Training and test data sets. </li>
-<li>Exploratory data analysis. We perform some exploratory data analysis on the training data set. This will help us get an idea of how many measurements are available and the quality of the measurements. We will try see see if there are any predictors we can easily eliminate by looking at the overview</li>
-<li>Data Clean up. We will clean up the data based on the preliminary data analysis. Typically this is to eliminate badly collected data</li>
-<li>Fitting a few models. We need to make some good choices on determining possible models to fit. If we fit too many models one of them is bound to fit just by the law of probabilities. The course advises us to use the test data set only once</li>
-<li>Evaluate the models. Once the model performs well on the training data set we will run it only once against the test data set</li>
-<li>Run the models against the coursers test dataset. We will try to predict the 20 results for the coursera test data</li>
-<li>Load the test results into coursera for the project submission </li>
-</ol>
+<div id="description-of-the-sample-error-and-estimation-of-the-error-with-cross-validation">
+<h3>
+<a id="description-of-the-sample-error-and-estimation-of-the-error-with-cross-validation" class="anchor" href="#description-of-the-sample-error-and-estimation-of-the-error-with-cross-validation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description of the sample error and estimation of the error with cross validation</h3>
+<p>As we can see the accuracy of the model fit is pretty high at 98.7% with the internal test data that random forest uses within the 60% of data we provided for the model. The out of box error rate is estimated at .87%. The number of trees used were 500 with optimal mtry at 2.</p>
+<p>We now test the model against the 40% of the original data that we resreved to be test data.</p>
+<pre><code> confusionMatrix(testingPmlNonNACols$classe,predict(modfitRforest,testingPmlNonNACols))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 2231    1    0    0    0
+##          B   10 1506    2    0    0
+##          C    0   12 1352    4    0
+##          D    0    0   30 1255    1
+##          E    0    0    2    3 1437
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9917          
+##                  95% CI : (0.9895, 0.9936)
+##     No Information Rate : 0.2856          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9895          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9955   0.9914   0.9755   0.9945   0.9993
+## Specificity            0.9998   0.9981   0.9975   0.9953   0.9992
+## Pos Pred Value         0.9996   0.9921   0.9883   0.9759   0.9965
+## Neg Pred Value         0.9982   0.9979   0.9948   0.9989   0.9998
+## Prevalence             0.2856   0.1936   0.1767   0.1608   0.1833
+## Detection Rate         0.2843   0.1919   0.1723   0.1600   0.1832
+## Detection Prevalence   0.2845   0.1935   0.1744   0.1639   0.1838
+## Balanced Accuracy      0.9977   0.9948   0.9865   0.9949   0.9993</code></pre>
+<p>The tests show an accuracy of 99.17 with a 95% confidence interval between 98.9% to 99.36 %. Based on this the estimated sample error rate is 0.83% which is slighty better than the out of box error estimated by using the training data set.</p>
+<p>Predictions for the Coursera Test data</p>
+<p>Once the models are complete we run the tests against the test data set provided by Coursera</p>
+<pre><code>testPmlNonNACols &lt;- testdata[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z")]
+courseraTestResults &lt;- predict( modfitRforest,testPmlNonNACols) 
+courseraTestResults </code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
+</div>
+
+<div id="final-results-for-the-random-forest-model">
+<h3>
+<a id="final-results-for-the-random-forest-model" class="anchor" href="#final-results-for-the-random-forest-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Final results for the random forest model</h3>
+<p>We expect close to a 100% match since the accuracy expected is over 99.5%. In actual comparison the model performed at 100% and correctly predicted all the Coursera testcases.</p>
+</div>
+
+<div id="fine-tuning-the-random-forest">
+<h3>
+<a id="fine-tuning-the-random-forest" class="anchor" href="#fine-tuning-the-random-forest" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fine tuning the random forest</h3>
+<p>Randon forest does not need any additional cross validation but it is possible to fine tune training model by using a k fold cross validation for the data. Since this is more computing intensive the original sample traning data did not execute on the current hardware within a reasonable amount of time (60 minutes). So I created a smaller sample size to pass to the trainer.</p>
+<pre><code>set.seed(1234)
+
+inTrainPml10 &lt;- createDataPartition(y=traindata$classe,p=0.3,list=FALSE)
+trainingPml10 &lt;- traindata[inTrainPml10,]
+testingPml10 &lt;- traindata[-inTrainPml10,]
+
+trainingPmlNonNACols10 &lt;- trainingPml10[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+testingPmlNonNACols10 &lt;- testingPml10[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")]
+
+testPmlNonNACols &lt;- testdata[c("roll_belt","pitch_belt","yaw_belt","total_accel_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z")]
+
+modfitRforest10 &lt;- train(classe ~.,method="rf",data=trainingPmlNonNACols10,
+        trControl=trainControl(method="cv",number=10, repeats=2, verboseIter = TRUE), prox=TRUE)</code></pre>
+<pre><code>## + Fold01: mtry= 2 
+## - Fold01: mtry= 2 
+## + Fold01: mtry=27 
+## - Fold01: mtry=27 
+## + Fold01: mtry=52 
+## - Fold01: mtry=52 
+## + Fold02: mtry= 2 
+## - Fold02: mtry= 2 
+## + Fold02: mtry=27 
+## - Fold02: mtry=27 
+## + Fold02: mtry=52 
+## - Fold02: mtry=52 
+## + Fold03: mtry= 2 
+## - Fold03: mtry= 2 
+## + Fold03: mtry=27 
+## - Fold03: mtry=27 
+## + Fold03: mtry=52 
+## - Fold03: mtry=52 
+## + Fold04: mtry= 2 
+## - Fold04: mtry= 2 
+## + Fold04: mtry=27 
+## - Fold04: mtry=27 
+## + Fold04: mtry=52 
+## - Fold04: mtry=52 
+## + Fold05: mtry= 2 
+## - Fold05: mtry= 2 
+## + Fold05: mtry=27 
+## - Fold05: mtry=27 
+## + Fold05: mtry=52 
+## - Fold05: mtry=52 
+## + Fold06: mtry= 2 
+## - Fold06: mtry= 2 
+## + Fold06: mtry=27 
+## - Fold06: mtry=27 
+## + Fold06: mtry=52 
+## - Fold06: mtry=52 
+## + Fold07: mtry= 2 
+## - Fold07: mtry= 2 
+## + Fold07: mtry=27 
+## - Fold07: mtry=27 
+## + Fold07: mtry=52 
+## - Fold07: mtry=52 
+## + Fold08: mtry= 2 
+## - Fold08: mtry= 2 
+## + Fold08: mtry=27 
+## - Fold08: mtry=27 
+## + Fold08: mtry=52 
+## - Fold08: mtry=52 
+## + Fold09: mtry= 2 
+## - Fold09: mtry= 2 
+## + Fold09: mtry=27 
+## - Fold09: mtry=27 
+## + Fold09: mtry=52 
+## - Fold09: mtry=52 
+## + Fold10: mtry= 2 
+## - Fold10: mtry= 2 
+## + Fold10: mtry=27 
+## - Fold10: mtry=27 
+## + Fold10: mtry=52 
+## - Fold10: mtry=52 
+## Aggregating results
+## Selecting tuning parameters
+## Fitting mtry = 27 on full training set</code></pre>
+<pre><code>print(modfitRforest10)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 5889 samples
+##   52 predictor
+##    5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## 
+## Summary of sample sizes: 5301, 5301, 5300, 5301, 5298, 5300, ... 
+## 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
+##    2    0.9779269  0.9720659  0.008125489  0.010289454
+##   27    0.9787749  0.9731428  0.006700520  0.008476131
+##   52    0.9706244  0.9628343  0.008157182  0.010318391
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 27.</code></pre>
+<pre><code>print(modfitRforest10$finalModel)</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(x = x, y = y, mtry = param$mtry, proximity = TRUE) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 27
+## 
+##         OOB estimate of  error rate: 1.83%
+## Confusion matrix:
+##      A    B    C   D    E class.error
+## A 1668    4    0   1    1 0.003584229
+## B   21 1106    9   3    1 0.029824561
+## C    0   15 1002  10    0 0.024342746
+## D    0    1   21 940    3 0.025906736
+## E    0    6    5   7 1065 0.016620499</code></pre>
+<pre><code>confusionMatrix(testingPmlNonNACols10$classe,predict(modfitRforest10,testingPmlNonNACols10))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 3888   14    1    2    1
+##          B   44 2563   48    1    1
+##          C    0   39 2340   16    0
+##          D    0    2   64 2184    1
+##          E    0    8   13   24 2479
+## 
+## Overall Statistics
+##                                          
+##                Accuracy : 0.9797         
+##                  95% CI : (0.9772, 0.982)
+##     No Information Rate : 0.2863         
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+##                                          
+##                   Kappa : 0.9743         
+##  Mcnemar's Test P-Value : 7.765e-15      
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9888   0.9760   0.9489   0.9807   0.9988
+## Specificity            0.9982   0.9915   0.9951   0.9942   0.9960
+## Pos Pred Value         0.9954   0.9646   0.9770   0.9702   0.9822
+## Neg Pred Value         0.9955   0.9943   0.9889   0.9963   0.9997
+## Prevalence             0.2863   0.1912   0.1796   0.1622   0.1807
+## Detection Rate         0.2831   0.1866   0.1704   0.1590   0.1805
+## Detection Prevalence   0.2844   0.1935   0.1744   0.1639   0.1838
+## Balanced Accuracy      0.9935   0.9838   0.9720   0.9874   0.9974</code></pre>
+<pre><code>courseraTestResults &lt;- predict( modfitRforest10,testPmlNonNACols) 
+courseraTestResults</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
+</div>
+
+<div id="final-results-for-the-tweaked-model">
+<h3>
+<a id="final-results-for-the-tweaked-model" class="anchor" href="#final-results-for-the-tweaked-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Final results for the tweaked model</h3>
+<p>With a sample size of 0.3 of the origial the k fold cross validation completes in a reasonable amount of time. The accuracy is 97.97 on the target with an out of box error estimate of 1.83%. The results on the coursera test cases however achieve a 100% target and it yields the same results.</p>
+<p>With more processing power it may be possible to use more of the dataset to generate a higher accuracy with k fold cross validation. The default cross validation built into the random forests routine seems to be doing a fine job as is.</p>
+</div>
+
+<p></p>
+</div>
+
+<p></p>
+</div>
+
+
+
+
+
+
+
+<p>
+</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/JagPadala/pml">Pml</a> is maintained by <a href="https://github.com/JagPadala">JagPadala</a>.</span>
