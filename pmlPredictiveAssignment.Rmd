@@ -79,6 +79,7 @@ modfitRforest <- train(classe ~.,method="rf",data=trainingPmlNonNACols)
  
 print(modfitRforest)
 print(modfitRforest$finalModel)
+varImp(modfitRforest)
  
 ```
 
