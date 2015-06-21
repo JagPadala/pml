@@ -21,7 +21,6 @@
     <section class="main-content">
       <p></p>
 
-<p></p>
 
 <p></p>
 
@@ -529,6 +528,32 @@ testingPmlNonNACols &lt;- testingPml[c("roll_belt","pitch_belt","yaw_belt","tota
 ## C    0   20 2028    6    0 0.012658228
 ## D    0    0   34 1894    2 0.018652850
 ## E    0    1    2    6 2156 0.004157044</code></pre>
+<pre><code>varImp(modfitRforest)</code></pre>
+<pre><code>## rf variable importance
+## 
+##   only 20 most important variables shown (out of 52)
+## 
+##                      Overall
+## roll_belt             100.00
+## yaw_belt               83.40
+## magnet_dumbbell_z      69.36
+## magnet_dumbbell_y      66.25
+## pitch_belt             61.15
+## pitch_forearm          59.75
+## magnet_dumbbell_x      55.72
+## roll_forearm           51.97
+## magnet_belt_z          48.42
+## accel_belt_z           48.28
+## roll_dumbbell          43.96
+## accel_dumbbell_y       42.59
+## magnet_belt_y          42.27
+## accel_dumbbell_z       39.35
+## roll_arm               35.14
+## accel_forearm_x        31.29
+## yaw_dumbbell           30.36
+## total_accel_dumbbell   29.57
+## accel_dumbbell_x       28.94
+## magnet_forearm_z       28.08</code></pre>
 </div>
 
 <div id="description-of-the-sample-error-and-estimation-of-the-error-with-cross-validation">
